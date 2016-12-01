@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+
+    <string name="tmdb_api_key"></string>
+    <string name="menu_popular">Popular</string>
+    <string name="menu_top_rated">Top Rated</string>
+    <string name="txt_favorite">Mark As Favorite</string>
+    <string name="format_dur">%d min</string>
+    <string name="format_rat">%.1f/10</string>
+    <string name="format_date">yyyy-MM-dd</string>
+    <string name="txt_unknown">Unknown</string>
+</resources>
