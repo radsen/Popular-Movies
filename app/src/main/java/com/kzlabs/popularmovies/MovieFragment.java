@@ -1,9 +1,20 @@
 package com.kzlabs.popularmovies;
 
+import android.app.MediaRouteButton;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,10 +24,16 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
+import com.kzlabs.popularmovies.data.PopularMoviesContract;
+import com.kzlabs.popularmovies.data.PopularMoviesContract.PopularMoviesEntry;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
 import com.kzlabs.popularmovies.interfaces.RecyclerViewItemClickListener;
 import com.kzlabs.popularmovies.model.Movie;
+import com.kzlabs.popularmovies.sync.PMService;
+import com.kzlabs.popularmovies.util.IOUtils;
 import com.kzlabs.popularmovies.util.NetworkHelper;
 
 import org.json.JSONArray;
@@ -37,17 +54,33 @@ import java.util.List;
  */
 
 public class MovieFragment extends BaseFragment implements RecyclerViewItemClickListener,
-        MovieConstants {
+        MovieConstants, LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = MovieFragment.class.getSimpleName();
 
+    private static final int FAV_LOADER_ID = 3466;
+
     private RecyclerView rvMovies;
+    private ProgressBar pbWait;
     private GridLayoutManager mGridLayoutManager;
 
     private MoviesAdapter mMoviesAdapter;
     private List<Movie> movieList;
+    private IntentFilter receiverIntentFilter;
+    private TextView tvError;
 
-    private AsyncTask<String, Integer, List<Movie>> fetchMovieData;
+    private BroadcastReceiver syncMovies = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals(ACTION_MOVIES)){
+                movieList.clear();
+                movieList = intent.getParcelableArrayListExtra(MOVIE_LIST_KEY);
+                mMoviesAdapter.swapData(movieList);
+                pbWait.setVisibility(View.GONE);
+                showList();
+            }
+        }
+    };
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -61,11 +94,14 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_movies, container, false);
 
+        pbWait = (ProgressBar) view.findViewById(R.id.pb_wait);
+        tvError = (TextView) view.findViewById(R.id.tv_error);
         rvMovies = (RecyclerView) view.findViewById(R.id.rv_movies);
 
         rvMovies.setHasFixedSize(true);
 
-        mGridLayoutManager = new GridLayoutManager(getContext(), 2);
+        int columns = getResources().getInteger(R.integer.columns);
+        mGridLayoutManager = new GridLayoutManager(getContext(), columns);
         rvMovies.setLayoutManager(mGridLayoutManager);
 
         return view;
@@ -81,15 +117,25 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         mMoviesAdapter.setOnItemClickListener(this);
         rvMovies.setAdapter(mMoviesAdapter);
 
-        if(NetworkHelper.isNetworkAvailable(getContext())){
-            String strPopularUrl = BASE_URL + "popular?" + KEY + getString(R.string.tmdb_api_key);
-            fetchMovieData = new FetchMovieData().execute(strPopularUrl);
-        }
+        receiverIntentFilter = new IntentFilter();
+        receiverIntentFilter.addAction(MovieConstants.ACTION_MOVIES);
+
+        retrieveBy(getString(R.string.popular_path_key));
     }
 
     @Override
     public void onStart() {
         super.onStart();
+        Log.d(TAG, "onStart");
+        LocalBroadcastManager.getInstance(getContext())
+                .registerReceiver(syncMovies, receiverIntentFilter);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        LocalBroadcastManager.getInstance(getContext())
+                .unregisterReceiver(syncMovies);
     }
 
     @Override
@@ -103,19 +149,32 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         String url = null;
         switch (item.getItemId()){
             case R.id.action_popular:
-                url = BASE_URL + "popular?" + KEY + getString(R.string.tmdb_api_key);
+                retrieveBy(getString(R.string.popular_path_key));
                 break;
 
             case R.id.action_top_rated:
-                url = BASE_URL + "top_rated?" + KEY + getString(R.string.tmdb_api_key);
+                retrieveBy(getString(R.string.top_path_key));
+                break;
+
+            case R.id.action_fav:
+                getLoaderManager().initLoader(FAV_LOADER_ID, null, this);
                 break;
         }
 
-        if(NetworkHelper.isNetworkAvailable(getContext()) && url != null){
-            fetchMovieData = new FetchMovieData().execute(url);
-        }
-
         return super.onOptionsItemSelected(item);
+    }
+
+    private void retrieveBy(String param){
+        Uri uri = NetworkHelper.buildUrlForPath(getContext(), param);
+        if(NetworkHelper.isNetworkAvailable(getContext()) && uri != null) {
+            pbWait.setVisibility(View.VISIBLE);
+            Intent intentService = new Intent(getContext(), PMService.class);
+            intentService.putExtra(MovieConstants.SERVICE_KEY, MovieConstants.MOVIE_LIST);
+            intentService.setData(uri);
+            getActivity().startService(intentService);
+        } else {
+            showError();
+        }
     }
 
     @Override
@@ -126,69 +185,53 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         startActivity(detailIntent);
     }
 
-    private class FetchMovieData extends AsyncTask<String, Integer, List<Movie>> {
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
-        @Override
-        protected List<Movie> doInBackground(String... strings) {
-
-            StringBuilder sb = new StringBuilder();
-
-            BufferedReader reader = null;
-            try {
-                URL url = new URL(strings[0]);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-                reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-
-                String line;
-                while ((line = reader.readLine()) != null){
-                    sb.append(line);
-                }
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if(reader == null){
-                    try{
-                        reader.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            List<Movie> movies = new ArrayList<>();
-            try {
-                JSONObject jsonResponse = new JSONObject(sb.toString());
-
-                JSONArray jsonMovieArray = jsonResponse.getJSONArray("results");
-
-                for(int index = 0; index < jsonMovieArray.length(); index++){
-                    JSONObject jsonMovie = jsonMovieArray.getJSONObject(index);
-
-                    Movie movie = new Movie();
-                    movie.setId(jsonMovie.getInt("id"));
-                    String imgUrl = "http://image.tmdb.org/t/p/w342" + jsonMovie.getString("poster_path");
-                    movie.setPoster(imgUrl);
-
-                    movies.add(movie);
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            return movies;
-        }
-
-        @Override
-        protected void onPostExecute(List<Movie> movies) {
-            super.onPostExecute(movies);
-
-            movieList.clear();
-            movieList.addAll(movies);
-            mMoviesAdapter.notifyDataSetChanged();;
-        }
+        Uri uri = PopularMoviesEntry.CONTENT_URI;
+        return new CursorLoader(getContext(), uri, null, null, null, null);
     }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if(data == null){
+            return;
+        }
+
+        movieList.clear();
+        if(data.moveToFirst()){
+            do {
+                Movie movie = new Movie();
+                movie.setId(data.getInt(data.getColumnIndex(PopularMoviesEntry._ID)));
+                movie.setTitle(data.getString(data.getColumnIndex(PopularMoviesEntry.TITLE)));
+                movie.setRuntime(data.getInt(data.getColumnIndex(PopularMoviesEntry.RUNTIME)));
+                movie.setOverview(data.getString(data.getColumnIndex(PopularMoviesEntry.SYNOPSIS)));
+                movie.setAverage(data.getFloat(data.getColumnIndex(PopularMoviesEntry.AVERAGE)));
+                movie.setYear(getString(R.string.format_date),
+                        data.getString(data.getColumnIndex(PopularMoviesEntry.RELEASE_DATE)));
+                movieList.add(movie);
+                Bitmap image = IOUtils.byteArrayToBitmap(data.getBlob(data.getColumnIndex(PopularMoviesEntry.IMAGE)));
+                movie.setBitmap(image);
+            } while (data.moveToNext());
+        }
+
+        mMoviesAdapter.swapData(movieList);
+        showList();
+    }
+
+    private void showList() {
+        rvMovies.setVisibility(View.VISIBLE);
+        tvError.setVisibility(View.GONE);
+    }
+
+    private void showError() {
+        rvMovies.setVisibility(View.GONE);
+        tvError.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mMoviesAdapter.swapData(null);
+    }
+
 }

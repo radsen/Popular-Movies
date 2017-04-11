@@ -21,6 +21,14 @@
 
         <activity android:name=".MovieDetailActivity" />
 
+        <provider
+            android:authorities="com.kzlabs.popular_movies"
+            android:name=".data.PopularMoviesProvider"
+            android:exported="false"/>
+
+        <service android:name=".sync.PMService"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

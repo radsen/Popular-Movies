@@ -2,13 +2,16 @@ package com.kzlabs.popularmovies;
 
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
+import android.support.v4.content.Loader;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import com.kzlabs.popularmovies.BR;
 import com.kzlabs.popularmovies.model.Movie;
+import com.kzlabs.popularmovies.util.BindingUtils;
 
 import java.util.List;
 
@@ -36,8 +39,13 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
     @Override
     public void onBindViewHolder(MoviesAdapter.ViewHolder holder, final int position) {
         final Movie movie = (Movie) movieList.get(position);
-        holder.getBinding().setVariable(BR.movie, movie);
-        holder.getBinding().executePendingBindings();
+//        holder.getBinding().setVariable(BR.movie, movie);
+//        holder.getBinding().executePendingBindings();
+        if(movie.getBitmap() != null){
+            holder.ivPoster.setImageBitmap(movie.getBitmap());
+        } else {
+            BindingUtils.loadImage(holder.ivPoster, movie.getPoster());
+        }
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -55,12 +63,21 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
         this.onItemClickListener = onItemClickListener;
     }
 
+    public void swapData(List<Movie> movies) {
+        movieList = movies;
+        notifyDataSetChanged();
+    }
+
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final ViewDataBinding mBinding;
+        private final ImageView ivPoster;
 
         public ViewHolder(View itemView) {
             super(itemView);
+
+            ivPoster = (ImageView) itemView.findViewById(R.id.iv_poster);
+
             mBinding = DataBindingUtil.bind(itemView);
         }
 

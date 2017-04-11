@@ -1,12 +1,29 @@
 <resources>
     <string name="app_name">Popular Movies</string>
 
-    <string name="tmdb_api_key"></string>
+    <string name="tmdb_api_key">dbf7599831d9cb7f030ab5f2e4235a24</string>
+    <string name="youtube_api_key">AIzaSyDRKvO06w73uNFcoqovJtzmECj77ALDt0Q</string>
+
     <string name="menu_popular">Popular</string>
     <string name="menu_top_rated">Top Rated</string>
     <string name="txt_favorite">Mark As Favorite</string>
-    <string name="format_dur">%d min</string>
+    <string name="format_dur">%d minutes</string>
     <string name="format_rat">%.1f/10</string>
     <string name="format_date">yyyy-MM-dd</string>
     <string name="txt_unknown">Unknown</string>
+    <string name="menu_fav">Favorites</string>
+    <string name="top_path_key">top_rated</string>
+    <string name="popular_path_key">popular</string>
+    <string name="mock_title">Dr. Strange</string>
+    <string name="mock_release_date">2016</string>
+    <string name="mock_runtime">1h 55mins</string>
+    <string name="mock_overview">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
+    <string name="mock_rating">7.6/10</string>
+    <string name="mock_name">Andres Solano</string>
+    <string name="section_title_reviews">Reviews</string>
+    <string name="menu_item_share">Share</string>
+    <string name="mime_type">text/html</string>
+    <string name="share_message" formatted="false">Check this out:\n %s - %s \n %s</string>
+    <string name="youtube_link">https://www.youtube.com/watch?v=</string>
+    <string name="error_unable_loading">Unable to retrieve movies from the server</string>
 </resources>

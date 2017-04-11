@@ -7,10 +7,16 @@
             type="com.kzlabs.popularmovies.model.Movie"/>
     </data>
 
+    <!--<ImageView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:scaleType="fitXY"-->
+        <!--app:imageUrl="@{movie.getPoster()}"/>-->
+
     <ImageView
+        android:id="@+id/iv_poster"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scaleType="fitXY"
-        app:imageUrl="@{movie.getPoster()}"/>
+        android:scaleType="centerInside"/>
 
 </layout>
