@@ -31,4 +31,5 @@ public interface MovieConstants {
     String SERVICE_KEY = "com.popular_movies.intent_service_key";
     String BASE_URL_IMAGE = "http://image.tmdb.org/t/p";
     String YOUTUBE_ID_KEY = "com.popular_movies.youtube_id_key";
+    String MENU_KEY = "com.popular_movies.menu_key";
 }

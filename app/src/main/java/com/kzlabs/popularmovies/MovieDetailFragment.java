@@ -169,7 +169,7 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
         receiverIntentFilter.addAction(MovieConstants.ACTION_TRAILERS);
         receiverIntentFilter.addAction(MovieConstants.ACTION_REVIEWS);
 
-        getLoaderManager().initLoader(FAV_LOADER_MOVIE_ID, null, this);
+        getLoaderManager().restartLoader(FAV_LOADER_MOVIE_ID, null, this);
     }
 
     @Override
@@ -259,9 +259,14 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        int movieId = getArguments().getInt(MOVIE_ID_KEY);
-        Uri uri = PopularMoviesContract.buildUriForFavorite(movieId);
-        return new CursorLoader(getContext(), uri, null, null, null, null);
+        switch (id){
+            case FAV_LOADER_MOVIE_ID:
+                int movieId = getArguments().getInt(MOVIE_ID_KEY);
+                Uri uri = PopularMoviesContract.buildUriForFavorite(movieId);
+                return new CursorLoader(getContext(), uri, null, null, null, null);
+        }
+
+        return null;
     }
 
     @Override

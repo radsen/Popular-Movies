@@ -1,6 +1,5 @@
 package com.kzlabs.popularmovies;
 
-import android.app.MediaRouteButton;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -8,7 +7,6 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -26,8 +24,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
-import com.kzlabs.popularmovies.data.PopularMoviesContract;
 import com.kzlabs.popularmovies.data.PopularMoviesContract.PopularMoviesEntry;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
 import com.kzlabs.popularmovies.interfaces.RecyclerViewItemClickListener;
@@ -35,17 +31,8 @@ import com.kzlabs.popularmovies.model.Movie;
 import com.kzlabs.popularmovies.sync.PMService;
 import com.kzlabs.popularmovies.util.IOUtils;
 import com.kzlabs.popularmovies.util.NetworkHelper;
+import com.kzlabs.popularmovies.util.PreferenceUtils;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +50,6 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     private RecyclerView rvMovies;
     private ProgressBar pbWait;
     private GridLayoutManager mGridLayoutManager;
-
     private MoviesAdapter mMoviesAdapter;
     private List<Movie> movieList;
     private IntentFilter receiverIntentFilter;
@@ -118,9 +104,9 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         rvMovies.setAdapter(mMoviesAdapter);
 
         receiverIntentFilter = new IntentFilter();
-        receiverIntentFilter.addAction(MovieConstants.ACTION_MOVIES);
+        receiverIntentFilter.addAction(ACTION_MOVIES);
 
-        retrieveBy(getString(R.string.popular_path_key));
+        retrieveBy(PreferenceUtils.getQuery(getContext()));
     }
 
     @Override
@@ -150,14 +136,17 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         switch (item.getItemId()){
             case R.id.action_popular:
                 retrieveBy(getString(R.string.popular_path_key));
+                PreferenceUtils.setQuery(getContext(), getString(R.string.popular_path_key));
                 break;
 
             case R.id.action_top_rated:
                 retrieveBy(getString(R.string.top_path_key));
+                PreferenceUtils.setQuery(getContext(), getString(R.string.top_path_key));
                 break;
 
             case R.id.action_fav:
                 getLoaderManager().initLoader(FAV_LOADER_ID, null, this);
+                PreferenceUtils.setQuery(getContext(), getString(R.string.favorite_key));
                 break;
         }
 
@@ -165,11 +154,16 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     }
 
     private void retrieveBy(String param){
+        if(getString(R.string.favorite_key).equals(param)){
+            getLoaderManager().initLoader(FAV_LOADER_ID, null, this);
+            return;
+        }
+
         Uri uri = NetworkHelper.buildUrlForPath(getContext(), param);
         if(NetworkHelper.isNetworkAvailable(getContext()) && uri != null) {
             pbWait.setVisibility(View.VISIBLE);
             Intent intentService = new Intent(getContext(), PMService.class);
-            intentService.putExtra(MovieConstants.SERVICE_KEY, MovieConstants.MOVIE_LIST);
+            intentService.putExtra(SERVICE_KEY, MOVIE_LIST);
             intentService.setData(uri);
             getActivity().startService(intentService);
         } else {

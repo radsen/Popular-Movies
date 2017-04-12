@@ -90,7 +90,7 @@ public class NetworkHelper {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if(reader == null){
+            if(reader != null){
                 try{
                     reader.close();
                 } catch (IOException e) {

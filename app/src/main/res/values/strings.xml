@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">Popular Movies</string>
 
-    <string name="tmdb_api_key">dbf7599831d9cb7f030ab5f2e4235a24</string>
-    <string name="youtube_api_key">AIzaSyDRKvO06w73uNFcoqovJtzmECj77ALDt0Q</string>
+    <string name="tmdb_api_key"></string>
+    <string name="youtube_api_key"></string>
 
     <string name="menu_popular">Popular</string>
     <string name="menu_top_rated">Top Rated</string>
@@ -26,4 +26,6 @@
     <string name="share_message" formatted="false">Check this out:\n %s - %s \n %s</string>
     <string name="youtube_link">https://www.youtube.com/watch?v=</string>
     <string name="error_unable_loading">Unable to retrieve movies from the server</string>
+    <string name="favorite_key">favorite</string>
+    <string name="preferences_file">pm_prefs.xml</string>
 </resources>
