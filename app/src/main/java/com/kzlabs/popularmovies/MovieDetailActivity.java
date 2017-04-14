@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 
 import com.google.android.youtube.player.YouTubeBaseActivity;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
+import com.kzlabs.popularmovies.model.Movie;
 
 /**
  * Created by radsen on 11/29/16.
@@ -13,6 +14,7 @@ import com.kzlabs.popularmovies.interfaces.MovieConstants;
 public class MovieDetailActivity extends AppCompatActivity {
 
     private int movieId;
+    private MovieDetailFragment movieDetailFragment;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -23,9 +25,16 @@ public class MovieDetailActivity extends AppCompatActivity {
             movieId = getIntent().getIntExtra(MovieConstants.MOVIE_ID_KEY, 0);
         }
 
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragment_detail, MovieDetailFragment.newInstance(movieId))
-                .commit();
+        if(savedInstanceState == null){
+            movieDetailFragment = MovieDetailFragment.newInstance(movieId);
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_detail, movieDetailFragment, MovieDetailFragment.TAG)
+                    .commit();
+        } else {
+            movieDetailFragment = (MovieDetailFragment)
+                    getSupportFragmentManager().findFragmentByTag(MovieDetailFragment.TAG);
+        }
+
     }
 }

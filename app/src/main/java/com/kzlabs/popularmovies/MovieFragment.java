@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -24,14 +25,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import com.kzlabs.popularmovies.data.PopularMoviesContract;
 import com.kzlabs.popularmovies.data.PopularMoviesContract.PopularMoviesEntry;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
 import com.kzlabs.popularmovies.interfaces.RecyclerViewItemClickListener;
 import com.kzlabs.popularmovies.model.Movie;
-import com.kzlabs.popularmovies.sync.PMService;
+import com.kzlabs.popularmovies.sync.PopularMoviesSyncUtils;
 import com.kzlabs.popularmovies.util.IOUtils;
 import com.kzlabs.popularmovies.util.NetworkHelper;
-import com.kzlabs.popularmovies.util.PreferenceUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,9 +45,11 @@ import java.util.List;
 public class MovieFragment extends BaseFragment implements RecyclerViewItemClickListener,
         MovieConstants, LoaderManager.LoaderCallbacks<Cursor> {
 
-    private static final String TAG = MovieFragment.class.getSimpleName();
+    public static final String TAG = MovieFragment.class.getSimpleName();
 
     private static final int FAV_LOADER_ID = 3466;
+    private static final int POPULAR_LOADER_ID = 3464;
+    private static final int TOP_RATED_LOADER_ID = 3465;
 
     private RecyclerView rvMovies;
     private ProgressBar pbWait;
@@ -54,17 +58,20 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     private List<Movie> movieList;
     private IntentFilter receiverIntentFilter;
     private TextView tvError;
+    private LoaderManager.LoaderCallbacks<Cursor> listener;
+    private int mSelectedLoader = 0;
 
     private BroadcastReceiver syncMovies = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals(ACTION_MOVIES)){
-                movieList.clear();
-                movieList = intent.getParcelableArrayListExtra(MOVIE_LIST_KEY);
-                mMoviesAdapter.swapData(movieList);
-                pbWait.setVisibility(View.GONE);
+                getActivity().getSupportLoaderManager()
+                        .restartLoader(POPULAR_LOADER_ID, null, listener);
                 showList();
+            } else if (intent.getAction().equals(ACTION_ERROR)){
+                showError();
             }
+            pbWait.setVisibility(View.GONE);
         }
     };
 
@@ -72,6 +79,7 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        listener = this;
     }
 
     @Nullable
@@ -98,6 +106,12 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         super.onActivityCreated(savedInstanceState);
         Log.d(TAG, "onActivityCreated");
 
+        if(savedInstanceState != null){
+            mSelectedLoader = savedInstanceState.getInt(LOADER_ID_KEY, POPULAR_LOADER_ID);
+        } else {
+            mSelectedLoader = POPULAR_LOADER_ID;
+        }
+
         movieList = new ArrayList<>();
         mMoviesAdapter = new MoviesAdapter(movieList);
         mMoviesAdapter.setOnItemClickListener(this);
@@ -105,8 +119,18 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
 
         receiverIntentFilter = new IntentFilter();
         receiverIntentFilter.addAction(ACTION_MOVIES);
+        receiverIntentFilter.addAction(ACTION_ERROR);
 
-        retrieveBy(PreferenceUtils.getQuery(getContext()));
+        pbWait.setVisibility(View.VISIBLE);
+        getActivity().getSupportLoaderManager().initLoader(mSelectedLoader, null, this);
+        PopularMoviesSyncUtils.initialize(getContext());
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.d(TAG, "onSaveInstanceState");
+        outState.putInt(LOADER_ID_KEY, mSelectedLoader);
     }
 
     @Override
@@ -115,6 +139,11 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         Log.d(TAG, "onStart");
         LocalBroadcastManager.getInstance(getContext())
                 .registerReceiver(syncMovies, receiverIntentFilter);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
     }
 
     @Override
@@ -135,40 +164,21 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         String url = null;
         switch (item.getItemId()){
             case R.id.action_popular:
-                retrieveBy(getString(R.string.popular_path_key));
-                PreferenceUtils.setQuery(getContext(), getString(R.string.popular_path_key));
+                mSelectedLoader = POPULAR_LOADER_ID;
                 break;
 
             case R.id.action_top_rated:
-                retrieveBy(getString(R.string.top_path_key));
-                PreferenceUtils.setQuery(getContext(), getString(R.string.top_path_key));
+                mSelectedLoader = TOP_RATED_LOADER_ID;
                 break;
 
             case R.id.action_fav:
-                getLoaderManager().initLoader(FAV_LOADER_ID, null, this);
-                PreferenceUtils.setQuery(getContext(), getString(R.string.favorite_key));
+                mSelectedLoader = FAV_LOADER_ID;
                 break;
         }
 
+        getLoaderManager().restartLoader(mSelectedLoader, null, this);
+
         return super.onOptionsItemSelected(item);
-    }
-
-    private void retrieveBy(String param){
-        if(getString(R.string.favorite_key).equals(param)){
-            getLoaderManager().initLoader(FAV_LOADER_ID, null, this);
-            return;
-        }
-
-        Uri uri = NetworkHelper.buildUrlForPath(getContext(), param);
-        if(NetworkHelper.isNetworkAvailable(getContext()) && uri != null) {
-            pbWait.setVisibility(View.VISIBLE);
-            Intent intentService = new Intent(getContext(), PMService.class);
-            intentService.putExtra(SERVICE_KEY, MOVIE_LIST);
-            intentService.setData(uri);
-            getActivity().startService(intentService);
-        } else {
-            showError();
-        }
     }
 
     @Override
@@ -181,8 +191,21 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        pbWait.setVisibility(View.VISIBLE);
 
-        Uri uri = PopularMoviesEntry.CONTENT_URI;
+        Uri uri = null;
+        switch (id){
+            case POPULAR_LOADER_ID:
+                uri = PopularMoviesContract.buildUriPopular(getContext());
+             break;
+            case TOP_RATED_LOADER_ID:
+                uri = PopularMoviesContract.buildUriTopRated(getContext());
+                break;
+            case FAV_LOADER_ID:
+                uri = PopularMoviesContract.buildUriFavorites(getContext());
+                break;
+        }
+
         return new CursorLoader(getContext(), uri, null, null, null, null);
     }
 
@@ -193,24 +216,40 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         }
 
         movieList.clear();
-        if(data.moveToFirst()){
-            do {
-                Movie movie = new Movie();
-                movie.setId(data.getInt(data.getColumnIndex(PopularMoviesEntry._ID)));
-                movie.setTitle(data.getString(data.getColumnIndex(PopularMoviesEntry.TITLE)));
-                movie.setRuntime(data.getInt(data.getColumnIndex(PopularMoviesEntry.RUNTIME)));
-                movie.setOverview(data.getString(data.getColumnIndex(PopularMoviesEntry.SYNOPSIS)));
-                movie.setAverage(data.getFloat(data.getColumnIndex(PopularMoviesEntry.AVERAGE)));
-                movie.setYear(getString(R.string.format_date),
-                        data.getString(data.getColumnIndex(PopularMoviesEntry.RELEASE_DATE)));
-                movieList.add(movie);
-                Bitmap image = IOUtils.byteArrayToBitmap(data.getBlob(data.getColumnIndex(PopularMoviesEntry.IMAGE)));
-                movie.setBitmap(image);
-            } while (data.moveToNext());
-        }
+        new AsyncTask<Cursor, Void, Void>(){
+            @Override
+            protected Void doInBackground(Cursor... cursors) {
+                Cursor data = cursors[0];
+                if(data.moveToFirst()){
+                    do {
+                        Movie movie = new Movie();
+                        movie.setId(data.getInt(data.getColumnIndex(PopularMoviesEntry._ID)));
+                        movie.setTitle(data.getString(data.getColumnIndex(PopularMoviesEntry.TITLE)));
+                        movie.setRuntime(data.getInt(data.getColumnIndex(PopularMoviesEntry.RUNTIME)));
+                        movie.setPoster(data.getString(data.getColumnIndex(PopularMoviesEntry.POSTER)));
+                        movie.setOverview(data.getString(data.getColumnIndex(PopularMoviesEntry.SYNOPSIS)));
+                        movie.setAverage(data.getFloat(data.getColumnIndex(PopularMoviesEntry.AVERAGE)));
+                        movie.setYear(getString(R.string.format_date),
+                                data.getString(data.getColumnIndex(PopularMoviesEntry.RELEASE_DATE)));
+                        movieList.add(movie);
+                        Bitmap image = IOUtils.byteArrayToBitmap(
+                                data.getBlob(data.getColumnIndex(PopularMoviesEntry.IMAGE)));
+                        movie.setBitmap(image);
+                    } while (data.moveToNext());
+                }
 
-        mMoviesAdapter.swapData(movieList);
-        showList();
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                mMoviesAdapter.swapData(movieList);
+                showList();
+                pbWait.setVisibility(View.GONE);
+            }
+        }.execute(data);
+
     }
 
     private void showList() {

@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.support.annotation.Nullable;
 
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
+import com.kzlabs.popularmovies.util.NetworkHelper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -27,27 +28,17 @@ public class PMService extends IntentService {
         Uri uri = intent.getData();
         switch (key){
             case MovieConstants.MOVIE_LIST:
-                PMTask.retrieveMovies(getApplicationContext(), uriToUrl(uri));
+                PMTask.retrieveMovies(getApplicationContext(), uri);
                 break;
             case MovieConstants.MOVIE:
-                PMTask.retrieveMovieById(getApplicationContext(), uriToUrl(uri));
+                PMTask.retrieveMovieById(getApplicationContext(), uri);
                 break;
             case MovieConstants.TRAILER:
-                PMTask.retrieveTrailersByMovieId(getApplicationContext(), uriToUrl(uri));
+                PMTask.retrieveTrailersByMovieId(getApplicationContext(), NetworkHelper.uriToUrl(uri));
                 break;
             case MovieConstants.REVIEWS:
-                PMTask.retrieveReviewsByMovieId(getApplicationContext(), uriToUrl(uri));
+                PMTask.retrieveReviewsByMovieId(getApplicationContext(), NetworkHelper.uriToUrl(uri));
                 break;
         }
-    }
-
-    private URL uriToUrl(Uri uri){
-        URL url = null;
-        try {
-            url = new URL(uri.toString());
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        return url;
     }
 }

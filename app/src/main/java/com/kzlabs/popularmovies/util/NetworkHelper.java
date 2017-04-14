@@ -1,6 +1,8 @@
 package com.kzlabs.popularmovies.util;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -11,6 +13,7 @@ import com.kzlabs.popularmovies.model.Trailer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -78,6 +81,9 @@ public class NetworkHelper {
         try {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
+            connection.setConnectTimeout(MovieConstants.TIMEOUT);
+            connection.setReadTimeout(MovieConstants.READ_TIMEOUT);
+
             reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
             String line;
@@ -102,6 +108,27 @@ public class NetworkHelper {
         return sb;
     }
 
+    public static byte[] getImageAsByteArray(URL url) {
+
+        byte[] image = null;
+        try {
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            connection.setConnectTimeout(MovieConstants.TIMEOUT);
+            connection.setReadTimeout(MovieConstants.READ_TIMEOUT);
+
+            image = IOUtils.bitmapToByteArray(
+                    BitmapFactory.decodeStream(connection.getInputStream()));
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return image;
+    }
+
     public static String buildUriImage(String poster) {
         return buildUriImage(null, poster);
     }
@@ -116,5 +143,15 @@ public class NetworkHelper {
                 .build();
 
         return uri.toString();
+    }
+
+    public static URL uriToUrl(Uri uri){
+        URL url = null;
+        try {
+            url = new URL(uri.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return url;
     }
 }

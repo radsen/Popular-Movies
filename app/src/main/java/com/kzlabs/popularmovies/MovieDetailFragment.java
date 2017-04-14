@@ -1,7 +1,6 @@
 package com.kzlabs.popularmovies;
 
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -11,9 +10,6 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v4.view.ViewPager;
@@ -36,12 +32,12 @@ import com.kzlabs.popularmovies.interfaces.MovieConstants;
 import com.kzlabs.popularmovies.model.Comment;
 import com.kzlabs.popularmovies.model.Movie;
 import com.kzlabs.popularmovies.model.Trailer;
+import com.kzlabs.popularmovies.sync.DetailQueryHandler;
 import com.kzlabs.popularmovies.sync.PMService;
 import com.kzlabs.popularmovies.util.IOUtils;
 import com.kzlabs.popularmovies.util.NetworkHelper;
 import java.util.List;
 
-import static android.R.id.message;
 import static android.view.View.VISIBLE;
 
 /**
@@ -49,26 +45,33 @@ import static android.view.View.VISIBLE;
  */
 
 public class MovieDetailFragment extends BaseFragment implements MovieConstants,
-        MovieDetailAdapter.FavListener, LoaderManager.LoaderCallbacks<Cursor>,
-        ViewPager.OnPageChangeListener {
+        MovieDetailAdapter.FavListener, ViewPager.OnPageChangeListener,
+        DetailQueryHandler.DetailQueryHandlerListener {
 
-    private static final int FAV_LOADER_MOVIE_ID = 3009;
+    public static final String TAG = MovieDetailFragment.class.getSimpleName();
+
+    private static final int UPDATE_FAVORITE = 10;
+    private static final int QUERY_MOVIE_BY_ID = 11;
 
     private RecyclerView rvDetail;
-    private MovieDetailAdapter mAdapter;
     private IntentFilter receiverIntentFilter;
     private Movie mMovie;
-    private boolean mIsFavorite;
     private ProgressBar pbWait;
     private ShareActionProvider mShareActionProvider;
     private TextView tvError;
+    private ImageView ivFavButton;
+    private DetailQueryHandler detailQueryHandler;
+    private int mMovieId;
+    private ViewPager.OnPageChangeListener pageListener;
+    private MovieDetailAdapter.FavListener favListener;
 
     private BroadcastReceiver syncReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals(ACTION_MOVIE)){
-                mMovie = intent.getParcelableExtra(MovieConstants.MOVIE_KEY);
-                getDataByType(mMovie.getId(), TRAILER);
+                mMovieId = getArguments().getInt(MOVIE_ID_KEY);
+                Uri uri = PopularMoviesContract.buildUriForMovieById(mMovieId);
+                detailQueryHandler.startQuery(QUERY_MOVIE_BY_ID, null, uri, null, null, null, null);
             } else if (intent.getAction().equals(ACTION_TRAILERS)) {
                 List<Trailer> trailers = intent.getParcelableArrayListExtra(TRAILER_KEY);
                 mMovie.setTrailers(trailers);
@@ -81,14 +84,8 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
             } else if (intent.getAction().equals(ACTION_REVIEWS)) {
                 List<Comment> comments = intent.getParcelableArrayListExtra(REVIEW_KEY);
                 mMovie.setComments(comments);
-                mAdapter.swap(mMovie);
-                rvDetail.setAdapter(mAdapter);
-            }
-
-            if(mMovie != null && mMovie.getId() != 0){
-                showList();
-            } else {
-                showError();
+                rvDetail.setAdapter(new MovieDetailAdapter(context, getChildFragmentManager(),
+                        mMovie, favListener, pageListener));
             }
 
             pbWait.setVisibility(View.GONE);
@@ -115,12 +112,9 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
             intentService.putExtra(MovieConstants.SERVICE_KEY, movieSection);
             intentService.setData(uri);
             getActivity().startService(intentService);
-        } else if(mMovie.getId() == 0) {
-            showError();
         } else {
-            showList();
-            mAdapter.swap(mMovie);
-            rvDetail.setAdapter(mAdapter);
+            uri = PopularMoviesContract.buildUriForMovieById(mMovieId);
+            detailQueryHandler.startQuery(QUERY_MOVIE_BY_ID, null, uri, null, null, null, null);
         }
     }
 
@@ -136,6 +130,8 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        pageListener = this;
+        favListener = this;
     }
 
     @Nullable
@@ -155,21 +151,20 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mMovie = new Movie();
+        mMovieId = getArguments().getInt(MOVIE_ID_KEY);
 
         rvDetail.setHasFixedSize(true);
         LinearLayoutManager layoutManager =
                 new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         rvDetail.setLayoutManager(layoutManager);
-        mAdapter = new MovieDetailAdapter(getContext(), getChildFragmentManager(), mMovie,
-                this, this);
 
         receiverIntentFilter = new IntentFilter();
         receiverIntentFilter.addAction(MovieConstants.ACTION_MOVIE);
         receiverIntentFilter.addAction(MovieConstants.ACTION_TRAILERS);
         receiverIntentFilter.addAction(MovieConstants.ACTION_REVIEWS);
 
-        getLoaderManager().restartLoader(FAV_LOADER_MOVIE_ID, null, this);
+        detailQueryHandler = new DetailQueryHandler(getContext().getContentResolver(), this);
+        getDataByType(mMovieId, MOVIE);
     }
 
     @Override
@@ -225,81 +220,21 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
     }
 
     @Override
-    public void onClick(View view, long id, Bitmap bitmap) {
-        ContentResolver resolver = getContext().getContentResolver();
-        Uri uri = PopularMoviesContract.buildUriForFavorite(id);
-        int resource;
-        if(mIsFavorite){
-            resolver.delete(uri, null, null);
-            resource = R.drawable.ic_favorite_white;
-            mIsFavorite = false;
+    public void onClick(final View view, long id) {
+        ivFavButton = (ImageView) view;
+
+        Uri uri = PopularMoviesContract.buildUriForMovieById(id);
+
+        if(mMovie.isFavorite()){
+            mMovie.setAsFavorite(false);
         } else {
-            resolver.insert(uri, getValues(bitmap));
-            resource = R.drawable.ic_favorite_red;
-            mIsFavorite = true;
-        }
-        ((ImageView)view).setImageResource(resource);
-    }
-
-    private ContentValues getValues(Bitmap bitmap) {
-        ContentValues contentValues = new ContentValues();
-
-        contentValues.put(PopularMoviesEntry._ID, mMovie.getId());
-        contentValues.put(PopularMoviesEntry.TITLE, mMovie.getTitle());
-        contentValues.put(PopularMoviesEntry.RELEASE_DATE, mMovie.getReleaseDate());
-        contentValues.put(PopularMoviesEntry.POSTER, mMovie.getPoster());
-        contentValues.put(PopularMoviesEntry.SYNOPSIS, mMovie.getOverview());
-        contentValues.put(PopularMoviesEntry.RUNTIME, mMovie.getRuntime());
-        contentValues.put(PopularMoviesEntry.AVERAGE, mMovie.getAverage());
-        byte[] data = IOUtils.bitmapToByteArray(bitmap);
-        contentValues.put(PopularMoviesEntry.IMAGE, data);
-
-        return contentValues;
-    }
-
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        switch (id){
-            case FAV_LOADER_MOVIE_ID:
-                int movieId = getArguments().getInt(MOVIE_ID_KEY);
-                Uri uri = PopularMoviesContract.buildUriForFavorite(movieId);
-                return new CursorLoader(getContext(), uri, null, null, null, null);
+            mMovie.setAsFavorite(true);
         }
 
-        return null;
-    }
+        ContentValues values = new ContentValues();
+        values.put(PopularMoviesEntry.FAV, mMovie.isFavorite());
+        detailQueryHandler.startUpdate(UPDATE_FAVORITE, null, uri, values, null, null);
 
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if(data != null && data.getCount() > 0){
-            mIsFavorite = true;
-
-            mMovie = new Movie();
-            data.moveToFirst();
-            mMovie.setId(data.getInt(data.getColumnIndex(PopularMoviesEntry._ID)));
-            mMovie.setTitle(data.getString(data.getColumnIndex(PopularMoviesEntry.TITLE)));
-            mMovie.setYear(getString(R.string.format_date),
-                    data.getString(data.getColumnIndex(PopularMoviesEntry.RELEASE_DATE)));
-            mMovie.setRuntime(data.getInt(data.getColumnIndex(PopularMoviesEntry.RUNTIME)));
-            mMovie.setAverage(data.getFloat(data.getColumnIndex(PopularMoviesEntry.AVERAGE)));
-            mMovie.setOverview(data.getString(data.getColumnIndex(PopularMoviesEntry.SYNOPSIS)));
-            mMovie.setAsFavorite(mIsFavorite);
-            Bitmap image = IOUtils.byteArrayToBitmap(data.getBlob(data.getColumnIndex(PopularMoviesEntry.IMAGE)));
-            mMovie.setBitmap(image);
-
-            data.close();
-
-            getDataByType(mMovie.getId(), TRAILER);
-
-        } else {
-            int movieId = getArguments().getInt(MOVIE_ID_KEY);
-            getDataByType(movieId, MOVIE);
-        }
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-        mAdapter.swap(null);
     }
 
     @Override
@@ -319,13 +254,55 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
 
     }
 
-    private void showList() {
-        rvDetail.setVisibility(View.VISIBLE);
-        tvError.setVisibility(View.GONE);
+    @Override
+    public void onQueryComplete(int token, Object cookie, Cursor cursor) {
+        switch (token){
+            case QUERY_MOVIE_BY_ID:
+                loadMovie(cursor);
+                break;
+        }
     }
 
-    private void showError() {
-        rvDetail.setVisibility(View.GONE);
-        tvError.setVisibility(View.VISIBLE);
+    @Override
+    public void onUpdateComplete(int token, Object cookie, int result) {
+        switch (token){
+            case UPDATE_FAVORITE:
+                int resource = 0;
+                if(result > 0){
+                    resource = (mMovie.isFavorite())?
+                            R.drawable.ic_favorite_red:R.drawable.ic_favorite_white;
+                } else {
+                    mMovie.setAsFavorite(!mMovie.isFavorite());
+                }
+                ivFavButton.setImageResource(resource);
+                break;
+        }
+    }
+
+    private void loadMovie(Cursor data) {
+        if(data != null && data.getCount() > 0){
+
+            mMovie = new Movie();
+            data.moveToFirst();
+            mMovie.setId(data.getInt(data.getColumnIndex(PopularMoviesEntry._ID)));
+            mMovie.setTitle(data.getString(data.getColumnIndex(PopularMoviesEntry.TITLE)));
+            mMovie.setYear(getString(R.string.format_date),
+                    data.getString(data.getColumnIndex(PopularMoviesEntry.RELEASE_DATE)));
+            mMovie.setRuntime(data.getInt(data.getColumnIndex(PopularMoviesEntry.RUNTIME)));
+            mMovie.setAverage(data.getFloat(data.getColumnIndex(PopularMoviesEntry.AVERAGE)));
+            mMovie.setOverview(data.getString(data.getColumnIndex(PopularMoviesEntry.SYNOPSIS)));
+            mMovie.setAsFavorite(data.getInt(data.getColumnIndex(PopularMoviesEntry.FAV)) == 1);
+            Bitmap image = IOUtils.byteArrayToBitmap(data.getBlob(data.getColumnIndex(PopularMoviesEntry.IMAGE)));
+            mMovie.setBitmap(image);
+
+            data.close();
+
+            if(NetworkHelper.isNetworkAvailable(getContext())){
+                getDataByType(mMovieId, TRAILER);
+            } else {
+                rvDetail.setAdapter(new MovieDetailAdapter(getContext(), getChildFragmentManager(),
+                        mMovie, this, this));
+            }
+        }
     }
 }

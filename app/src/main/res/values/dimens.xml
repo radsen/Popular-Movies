@@ -3,5 +3,8 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
 
+    <dimen name="element_vertical_margin">8dp</dimen>
+    <dimen name="element_horizontal_margin">8dp</dimen>
+
     <integer name="columns">2</integer>
 </resources>

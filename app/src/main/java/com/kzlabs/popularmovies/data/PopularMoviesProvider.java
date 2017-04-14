@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.kzlabs.popularmovies.R;
 import com.kzlabs.popularmovies.data.PopularMoviesContract.PopularMoviesEntry;
 
 /**
@@ -21,15 +22,22 @@ public class PopularMoviesProvider extends ContentProvider {
     private static final int CODE_MOVIE_WITH_ID = 101;
 
     private static final UriMatcher sUriMatcher = buildUriMatcher();
+    private static final int CODE_MOVIES_WITH_PATH = 102;
 
     private PopularMoviesDbHelper mDbHelper;
 
     private static UriMatcher buildUriMatcher() {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+
         uriMatcher.addURI(PopularMoviesContract.CONTENT_AUTHORITY,
                 PopularMoviesContract.PATH_MOVIE, CODE_MOVIE);
+
         uriMatcher.addURI(PopularMoviesContract.CONTENT_AUTHORITY,
                 PopularMoviesContract.PATH_MOVIE + "/#", CODE_MOVIE_WITH_ID);
+
+        uriMatcher.addURI(PopularMoviesContract.CONTENT_AUTHORITY,
+                PopularMoviesContract.PATH_MOVIE + "/*", CODE_MOVIES_WITH_PATH);
+
         return uriMatcher;
     }
 
@@ -69,6 +77,30 @@ public class PopularMoviesProvider extends ContentProvider {
                         null,
                         PopularMoviesEntry.RELEASE_DATE);
                 break;
+            case CODE_MOVIES_WITH_PATH:
+                String path = uri.getLastPathSegment();
+
+                String selection = null;
+                String[] selectionArgs = new String[0];
+                if(getContext().getString(R.string.popular_path_key).equals(path)){
+                    selection = PopularMoviesEntry.CATEGORY + " = ?  ";
+                    selectionArgs = new String[]{ String.valueOf(1) };
+                } else if (getContext().getString(R.string.top_path_key).equals(path)) {
+                    selection = PopularMoviesEntry.CATEGORY + " = ?  ";
+                    selectionArgs = new String[]{ String.valueOf(2) };
+                } else if (getContext().getString(R.string.favorite_key).equals(path)) {
+                    selection = PopularMoviesEntry.FAV + " = ?  ";
+                    selectionArgs = new String[]{ String.valueOf(1) };
+                }
+
+                cursor = db.query(PopularMoviesEntry.TABLE_NAME,
+                        PopularMoviesEntry.PROJECTION,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        PopularMoviesEntry.RELEASE_DATE);
+                break;
 
         }
 
@@ -83,6 +115,37 @@ public class PopularMoviesProvider extends ContentProvider {
     @Override
     public String getType(@NonNull Uri uri) {
         return null;
+    }
+
+    @Override
+    public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] values) {
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+
+        switch (sUriMatcher.match(uri)){
+            case CODE_MOVIE:
+                db.beginTransaction();
+                int rowsInserted = 0;
+                try{
+                    for(ContentValues value : values){
+                        long id = db.insert(PopularMoviesEntry.TABLE_NAME, null, value);
+
+                        if(id != -1){
+                            rowsInserted++;
+                        }
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+
+                if(rowsInserted > 0){
+                    getContext().getContentResolver().notifyChange(uri, null);
+                }
+
+                return rowsInserted;
+            default:
+                return super.bulkInsert(uri, values);
+        }
     }
 
     @Nullable
@@ -131,6 +194,25 @@ public class PopularMoviesProvider extends ContentProvider {
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String s,
                       @Nullable String[] strings) {
-        return 0;
+        int rows = 0;
+        switch (sUriMatcher.match(uri)){
+            case CODE_MOVIE_WITH_ID:
+                SQLiteDatabase db = mDbHelper.getWritableDatabase();
+
+                String id = uri.getLastPathSegment();
+                String selection = PopularMoviesEntry._ID + " = ?";
+                String[] selectionArgs = new String[]{ id };
+
+                rows = db.update(PopularMoviesEntry.TABLE_NAME, contentValues,
+                        selection, selectionArgs);
+
+                break;
+        }
+
+        if(rows > 0){
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return rows;
     }
 }

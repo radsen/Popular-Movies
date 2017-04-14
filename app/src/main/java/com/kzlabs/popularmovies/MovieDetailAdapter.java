@@ -40,7 +40,7 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
     private ViewPager.OnPageChangeListener mPageListener;
 
     interface FavListener {
-        void onClick(View view, long id, Bitmap bitmap);
+        void onClick(View view, long id);
     }
 
     public MovieDetailAdapter(Context context, FragmentManager childFragmentManager,
@@ -97,16 +97,16 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
             final SMovie movieHolder = (SMovie) holder;
             movieHolder.tvTitle.setText(mMovie.getTitle());
             movieHolder.tvRelease.setText(String.valueOf(mMovie.getYear()));
-            String duration = String.format(mContext.getString(R.string.format_dur),
-                    mMovie.getRuntime());
+            String duration = "";
+            if(mMovie.getRuntime() != 0){
+                duration = String.format(mContext.getString(R.string.format_dur),
+                        mMovie.getRuntime());
+            } else {
+                duration = mContext.getString(R.string.unknown_duration);
+            }
             movieHolder.tvRuntime.setText(duration);
 
-            if(mMovie.getBitmap() != null){
-                movieHolder.ivPoster.setImageBitmap(mMovie.getBitmap());
-            } else {
-                String imgUrl = mMovie.getPoster();
-                BindingUtils.loadImage(movieHolder.ivPoster, imgUrl);
-            }
+            movieHolder.ivPoster.setImageBitmap(mMovie.getBitmap());
 
             movieHolder.tvOverview.setText(mMovie.getOverview());
             movieHolder.tvRating.setText(String.format(mContext.getString(R.string.format_rat),
@@ -119,9 +119,7 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
             movieHolder.ivFav.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Drawable drawable = movieHolder.ivPoster.getDrawable();
-                    Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-                    mListener.onClick(view, mMovie.getId(), bitmap);
+                    mListener.onClick(view, mMovie.getId());
                 }
             });
 

@@ -14,18 +14,17 @@
             android:id="@+id/tv_title"
             android:layout_width="0dp"
             app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/element_vertical_margin"
             tools:text="Dr Strange"
             style="@style/DetailTitleBold"
             app:layout_constraintLeft_toLeftOf="parent"
             android:layout_marginLeft="@dimen/activity_horizontal_margin"
             app:layout_constraintRight_toLeftOf="@+id/tv_release_date"
-            android:layout_marginRight="8dp" />
+            android:layout_marginRight="@dimen/element_horizontal_margin" />
 
         <TextView
             android:id="@+id/tv_release_date"
             app:layout_constraintTop_toTopOf="@+id/tv_title"
-            android:layout_marginTop="0dp"
             tools:text="@string/mock_release_date"
             style="@style/DetailTitleBold"
             android:layout_marginRight="@dimen/activity_horizontal_margin"
@@ -36,15 +35,16 @@
             tools:text="@string/mock_runtime"
             style="@style/DetailText"
             app:layout_constraintLeft_toRightOf="@+id/iv_poster"
-            android:layout_marginLeft="8dp"
+            android:layout_marginLeft="@dimen/element_horizontal_margin"
             app:layout_constraintTop_toTopOf="@+id/iv_poster" />
 
         <ImageView
             android:id="@+id/iv_poster"
             android:layout_width="100dp"
             android:layout_height="150dp"
+            android:scaleType="fitCenter"
             tools:src="@mipmap/ic_launcher"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/element_vertical_margin"
             app:layout_constraintTop_toBottomOf="@+id/tv_title"
             app:layout_constraintLeft_toLeftOf="@+id/tv_title" />
 
@@ -55,12 +55,12 @@
             android:textColor="@android:color/white"
             app:layout_constraintRight_toRightOf="@+id/iv_fav"
             tools:text="@string/mock_overview"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/element_vertical_margin"
             app:layout_constraintTop_toBottomOf="@+id/iv_poster"
             app:layout_constraintLeft_toLeftOf="@+id/iv_poster"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="@dimen/element_vertical_margin" />
 
         <ImageView
             android:id="@+id/iv_rating"
@@ -69,13 +69,13 @@
             android:src="@drawable/ic_rating"
             tools:src="@drawable/ic_rating"
             app:layout_constraintLeft_toLeftOf="@+id/tv_runtime"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/element_vertical_margin"
             app:layout_constraintTop_toBottomOf="@+id/tv_runtime" />
 
         <TextView
             android:id="@+id/tv_rating"
             app:layout_constraintLeft_toRightOf="@+id/iv_rating"
-            android:layout_marginLeft="8dp"
+            android:layout_marginLeft="@dimen/element_horizontal_margin"
             app:layout_constraintTop_toTopOf="@+id/iv_rating"
             app:layout_constraintBottom_toBottomOf="@+id/iv_rating"
             app:layout_constraintVertical_bias="0.58"

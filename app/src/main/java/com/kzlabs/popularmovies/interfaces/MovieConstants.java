@@ -14,11 +14,13 @@ public interface MovieConstants {
     String TRAILER_KEY = "com.popular_movies.trailer_key";
     String REVIEW_KEY = "com.popular_movies.review_key";
     String MOVIE_LIST_KEY = "com.popular_movies.movie_list_key";
+    String LOADER_ID_KEY = "com.popular_movies.loader_id_key";
 
     String ACTION_MOVIE = "com.popular_movies.MOVIE";
     String ACTION_TRAILERS = "com.popular_movies.TRAILERS";
     String ACTION_REVIEWS = "com.popular_movies.REVIEWS";
     String ACTION_MOVIES = "com.popular_movies.MOVIES";
+    String ACTION_ERROR = "com.popular_movies.ERROR";
 
     String TRAILER_PATH = "videos";
     String REVIEWS_PATH = "reviews";
@@ -31,5 +33,10 @@ public interface MovieConstants {
     String SERVICE_KEY = "com.popular_movies.intent_service_key";
     String BASE_URL_IMAGE = "http://image.tmdb.org/t/p";
     String YOUTUBE_ID_KEY = "com.popular_movies.youtube_id_key";
-    String MENU_KEY = "com.popular_movies.menu_key";
+
+    int TIMEOUT = 5000;
+    int READ_TIMEOUT = 10000;
+
+    String POPULAR = "popular";
+    String TOP_RATED = "top_rated";
 }

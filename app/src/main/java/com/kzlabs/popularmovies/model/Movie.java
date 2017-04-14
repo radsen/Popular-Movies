@@ -47,8 +47,11 @@ public class Movie implements Parcelable {
         average = in.readFloat();
         releaseDate = in.readString();
         year = in.readInt();
+        commentList = new ArrayList<>();
         in.readTypedList(commentList, Comment.CREATOR);
+        trailerList = new ArrayList<>();
         in.readTypedList(trailerList, Trailer.CREATOR);
+        favorite = in.readByte() != 0;
     }
 
     public static final Creator<Movie> CREATOR = new Creator<Movie>() {
@@ -145,7 +148,7 @@ public class Movie implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel parcel, int i) {
+    public void writeToParcel(Parcel parcel, int flags) {
         parcel.writeInt(id);
         parcel.writeString(poster);
         parcel.writeString(title);
@@ -156,6 +159,7 @@ public class Movie implements Parcelable {
         parcel.writeInt(year);
         parcel.writeList(commentList);
         parcel.writeList(trailerList);
+        parcel.writeByte((byte) (favorite ? 1 : 0));
     }
 
     public void setTrailers(List<Trailer> trailers) {
