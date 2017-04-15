@@ -21,7 +21,7 @@ class TrailerAdapter extends FragmentPagerAdapter {
 
     private static final String TAG = TrailerAdapter.class.getSimpleName();
 
-    private final List<Trailer> mTrailers;
+    private List<Trailer> mTrailers;
 
     public TrailerAdapter(FragmentManager fm, List<Trailer> trailers) {
         super(fm);
@@ -36,5 +36,13 @@ class TrailerAdapter extends FragmentPagerAdapter {
     @Override
     public Fragment getItem(final int position) {
         return FragmentPlayer.newInstance(mTrailers.get(position).getKey());
+    }
+
+    public void swapData(List<Trailer> trailers) {
+        if(trailers != null){
+            mTrailers = trailers;
+        }
+
+        notifyDataSetChanged();
     }
 }

@@ -26,7 +26,7 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
+        Log.d(TAG, "onCreate - " + this.toString());
         youtubeFragment = YouTubePlayerSupportFragment.newInstance();
         getChildFragmentManager()
                 .beginTransaction()
@@ -39,7 +39,7 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        Log.d(TAG, "onCreateView");
+        Log.d(TAG, "onCreateView - " + this.toString());
         View view = inflater.inflate(R.layout.view_trailer, container, false);
 
         return view;
@@ -50,6 +50,7 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
                                         YouTubePlayer youTubePlayer, boolean wasRestored) {
         if (!wasRestored) {
             this.youtubePlayer = youTubePlayer;
+            Log.d(TAG, " Youtube video: " + getArguments().getString(MovieConstants.YOUTUBE_ID_KEY));
             youTubePlayer.cueVideo(getArguments().getString(MovieConstants.YOUTUBE_ID_KEY));
         }
     }
@@ -61,6 +62,7 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
     }
 
     public static Fragment newInstance(String youtubeId) {
+        Log.d(TAG, "newInstance Id: " + youtubeId);
         FragmentPlayer fragmentPlayer = new FragmentPlayer();
         Bundle bundle = new Bundle();
         bundle.putString(MovieConstants.YOUTUBE_ID_KEY, youtubeId);
@@ -71,12 +73,14 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        Log.d(TAG, "setUserVisibleHint");
+        Log.d(TAG, "setUserVisibleHint - " + this.toString());
         if(!isVisibleToUser && youtubePlayer != null){
+            Log.d(TAG, "Release player and remove fragment");
             youtubePlayer.release();
             getChildFragmentManager().beginTransaction().remove(youtubeFragment)
                     .commitAllowingStateLoss();
         } else if(isVisibleToUser && youtubeFragment != null) {
+            Log.d(TAG, "Add fragment and initialize player");
             getChildFragmentManager().beginTransaction()
                     .replace(R.id.youtube_layout, youtubeFragment).commitAllowingStateLoss();
             youtubeFragment.initialize(getString(R.string.youtube_api_key), this);
@@ -87,24 +91,24 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart");
+        Log.d(TAG, "onStart - " + this.toString());
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume");
+        Log.d(TAG, "onResume - " + this.toString());
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause");
+        Log.d(TAG, "onPause - " + this.toString());
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        Log.d(TAG, "onStop");
+        Log.d(TAG, "onStop - " + this.toString());
     }
 }

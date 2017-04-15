@@ -69,7 +69,6 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals(ACTION_MOVIE)){
-                mMovieId = getArguments().getInt(MOVIE_ID_KEY);
                 Uri uri = PopularMoviesContract.buildUriForMovieById(mMovieId);
                 detailQueryHandler.startQuery(QUERY_MOVIE_BY_ID, null, uri, null, null, null, null);
             } else if (intent.getAction().equals(ACTION_TRAILERS)) {
@@ -151,7 +150,9 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mMovieId = getArguments().getInt(MOVIE_ID_KEY);
+        if(getArguments() != null){
+            mMovieId = getArguments().getInt(MOVIE_ID_KEY);
+        }
 
         rvDetail.setHasFixedSize(true);
         LinearLayoutManager layoutManager =
@@ -304,5 +305,10 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
                         mMovie, this, this));
             }
         }
+    }
+
+    public void loadDetail(int movieId) {
+        mMovieId = movieId;
+        getDataByType(mMovieId, MOVIE);
     }
 }

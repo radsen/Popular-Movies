@@ -8,6 +8,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +25,8 @@ import com.kzlabs.popularmovies.util.BindingUtils;
 
 public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.Section> {
 
+    public static final String TAG = MovieDetailAdapter.class.getSimpleName();
+
     private static final int SECTION_TRAILER_INDEX = 0;
     private static final int SECTION_MOVIE_INDEX = 1;
     private static final int SECTION_REVIEW_INDEX = 3;
@@ -34,6 +37,7 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
 
     private final FragmentManager mChildManager;
     private final FavListener mListener;
+    private final TrailerAdapter mTrailerAdapter;
 
     private Movie mMovie;
     private final Context mContext;
@@ -51,6 +55,7 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
         mMovie = movie;
         mListener = listener;
         mPageListener = pageChangeListener;
+        mTrailerAdapter = new TrailerAdapter(mChildManager, mMovie.getTrailers());
     }
 
     @Override
@@ -88,11 +93,14 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
     public void onBindViewHolder(MovieDetailAdapter.Section holder, int position) {
         if(holder instanceof STrailer) {
             STrailer trailerHolder = (STrailer) holder;
-            trailerHolder.vpTrailers.setAdapter(new TrailerAdapter(mChildManager,
-                    mMovie.getTrailers()));
-            if(mPageListener != null){
-                trailerHolder.vpTrailers.addOnPageChangeListener(mPageListener);
+            if(trailerHolder.vpTrailers.getAdapter() != null){
+                Log.d(TAG, "Set trailer adapter");
+                mTrailerAdapter.swapData(mMovie.getTrailers());
+            } else {
+                Log.d(TAG, "Set trailer adapter");
+                trailerHolder.vpTrailers.setAdapter(mTrailerAdapter);
             }
+            trailerHolder.vpTrailers.addOnPageChangeListener(mPageListener);
         } else if (holder instanceof SMovie) {
             final SMovie movieHolder = (SMovie) holder;
             movieHolder.tvTitle.setText(mMovie.getTitle());

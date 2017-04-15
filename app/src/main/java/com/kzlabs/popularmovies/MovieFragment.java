@@ -16,6 +16,7 @@ import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -60,6 +61,12 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     private TextView tvError;
     private LoaderManager.LoaderCallbacks<Cursor> listener;
     private int mSelectedLoader = 0;
+    private OnItemSelectedListener itemSelectedListener;
+    private boolean mMultiPane;
+
+    public interface OnItemSelectedListener {
+        void onMovieSelected(int movieId);
+    }
 
     private BroadcastReceiver syncMovies = new BroadcastReceiver() {
         @Override
@@ -80,6 +87,18 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         listener = this;
+        mMultiPane = getResources().getBoolean(R.bool.twoPaneMode);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if(context instanceof OnItemSelectedListener){
+            itemSelectedListener = (OnItemSelectedListener) context;
+        } else {
+            throw new ClassCastException(context.toString() +
+                    " must implement MovieFragment.OnItemSelectedListener");
+        }
     }
 
     @Nullable
@@ -94,7 +113,7 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
 
         rvMovies.setHasFixedSize(true);
 
-        int columns = getResources().getInteger(R.integer.columns);
+        int columns = calculateNoOfColumns(getContext());
         mGridLayoutManager = new GridLayoutManager(getContext(), columns);
         rvMovies.setLayoutManager(mGridLayoutManager);
 
@@ -183,10 +202,15 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
 
     @Override
     public void onItemClick(int position) {
-        Intent detailIntent = new Intent(getContext(), MovieDetailActivity.class);
         Movie movie = movieList.get(position);
-        detailIntent.putExtra(MOVIE_ID_KEY, movie.getId());
-        startActivity(detailIntent);
+
+        if(mMultiPane){
+            itemSelectedListener.onMovieSelected(movie.getId());
+        } else {
+            Intent detailIntent = new Intent(getContext(), MovieDetailActivity.class);
+            detailIntent.putExtra(MOVIE_ID_KEY, movie.getId());
+            startActivity(detailIntent);
+        }
     }
 
     @Override
@@ -247,6 +271,8 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
                 mMoviesAdapter.swapData(movieList);
                 showList();
                 pbWait.setVisibility(View.GONE);
+
+                itemSelectedListener.onMovieSelected(movieList.get(0).getId());
             }
         }.execute(data);
 
@@ -267,4 +293,21 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         mMoviesAdapter.swapData(null);
     }
 
+    public static MovieFragment newInstance(Bundle extras) {
+        MovieFragment movieFragment = new MovieFragment();
+        movieFragment.setArguments(extras);
+        return movieFragment;
+    }
+
+    /*
+     *  Taken from one of my instructors suggestions when reviewing the code
+     *  the only modification is the scale factor value
+     */
+    public static int calculateNoOfColumns(Context context) {
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+        int scalingFactor = 342;
+        int noOfColumns = (int) (dpWidth / scalingFactor);
+        return noOfColumns;
+    }
 }
