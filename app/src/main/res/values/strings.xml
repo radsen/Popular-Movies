@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">Popular Movies</string>
 
-    <string name="tmdb_api_key">dbf7599831d9cb7f030ab5f2e4235a24</string>
-    <string name="youtube_api_key">AIzaSyDRKvO06w73uNFcoqovJtzmECj77ALDt0Q</string>
+    <string name="tmdb_api_key"></string>
+    <string name="youtube_api_key"></string>
 
     <string name="menu_popular">Popular</string>
     <string name="menu_top_rated">Top Rated</string>
