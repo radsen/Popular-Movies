@@ -4,14 +4,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.GridLayoutManager;
@@ -24,17 +21,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import com.kzlabs.popularmovies.data.PopularMoviesContract;
-import com.kzlabs.popularmovies.data.PopularMoviesContract.PopularMoviesEntry;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
 import com.kzlabs.popularmovies.interfaces.RecyclerViewItemClickListener;
 import com.kzlabs.popularmovies.model.Movie;
-import com.kzlabs.popularmovies.sync.PopularMoviesSyncUtils;
-import com.kzlabs.popularmovies.util.IOUtils;
-import com.kzlabs.popularmovies.util.NetworkHelper;
+import com.kzlabs.popularmovies.sync.PMSyncUtils;
+import com.kzlabs.popularmovies.util.MoviesLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +37,7 @@ import java.util.List;
  */
 
 public class MovieFragment extends BaseFragment implements RecyclerViewItemClickListener,
-        MovieConstants, LoaderManager.LoaderCallbacks<Cursor> {
+        MovieConstants, LoaderManager.LoaderCallbacks<List<Movie>> {
 
     public static final String TAG = MovieFragment.class.getSimpleName();
 
@@ -53,16 +46,19 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     private static final int TOP_RATED_LOADER_ID = 3465;
 
     private RecyclerView rvMovies;
-    private ProgressBar pbWait;
     private GridLayoutManager mGridLayoutManager;
     private MoviesAdapter mMoviesAdapter;
-    private List<Movie> movieList;
     private IntentFilter receiverIntentFilter;
-    private TextView tvError;
-    private LoaderManager.LoaderCallbacks<Cursor> listener;
-    private int mSelectedLoader = 0;
+    private LoaderManager.LoaderCallbacks<List<Movie>> listener;
     private OnItemSelectedListener itemSelectedListener;
     private boolean mMultiPane;
+    private int mSelectedLoader = 0;
+    private int mScrollPosition = 0;
+    private int mSelectedPosition = 0;
+
+    public boolean hasMovies() {
+        return mMoviesAdapter.getItemCount() > 0;
+    }
 
     public interface OnItemSelectedListener {
         void onMovieSelected(int movieId);
@@ -72,13 +68,16 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals(ACTION_MOVIES)){
-                getActivity().getSupportLoaderManager()
-                        .restartLoader(POPULAR_LOADER_ID, null, listener);
+                getActivity()
+                        .getSupportLoaderManager()
+                        .restartLoader(POPULAR_LOADER_ID, null, listener)
+                        .forceLoad();
                 showList();
             } else if (intent.getAction().equals(ACTION_ERROR)){
+                PMSyncUtils.setInitialized(false);
                 showError();
             }
-            pbWait.setVisibility(View.GONE);
+            hideProgress();
         }
     };
 
@@ -107,17 +106,34 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_movies, container, false);
 
-        pbWait = (ProgressBar) view.findViewById(R.id.pb_wait);
-        tvError = (TextView) view.findViewById(R.id.tv_error);
         rvMovies = (RecyclerView) view.findViewById(R.id.rv_movies);
-
         rvMovies.setHasFixedSize(true);
 
         int columns = calculateNoOfColumns(getContext());
         mGridLayoutManager = new GridLayoutManager(getContext(), columns);
         rvMovies.setLayoutManager(mGridLayoutManager);
-
+        setScrollChangedListener();
         return view;
+    }
+
+    private void setScrollChangedListener() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            rvMovies.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+                @Override
+                public void onScrollChange(View view, int i, int i1, int i2, int i3) {
+                    mSelectedPosition = NO_SELECTION;
+                }
+            });
+        } else {
+            rvMovies.setOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                    super.onScrolled(recyclerView, dx, dy);
+                    mSelectedPosition = NO_SELECTION;
+                }
+            });
+        }
+
     }
 
     @Override
@@ -127,11 +143,14 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
 
         if(savedInstanceState != null){
             mSelectedLoader = savedInstanceState.getInt(LOADER_ID_KEY, POPULAR_LOADER_ID);
+            mScrollPosition = savedInstanceState.getInt(LAST_SCROLLED_POSITION, 0);
+            mSelectedPosition = savedInstanceState.getInt(SELECTED_POSITION, NO_SELECTION);
         } else {
             mSelectedLoader = POPULAR_LOADER_ID;
+            mSelectedPosition = NO_SELECTION;
         }
 
-        movieList = new ArrayList<>();
+        List<Movie> movieList = new ArrayList<>();
         mMoviesAdapter = new MoviesAdapter(movieList);
         mMoviesAdapter.setOnItemClickListener(this);
         rvMovies.setAdapter(mMoviesAdapter);
@@ -140,9 +159,7 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         receiverIntentFilter.addAction(ACTION_MOVIES);
         receiverIntentFilter.addAction(ACTION_ERROR);
 
-        pbWait.setVisibility(View.VISIBLE);
-        getActivity().getSupportLoaderManager().initLoader(mSelectedLoader, null, this);
-        PopularMoviesSyncUtils.initialize(getContext());
+        loadRequestedData();
     }
 
     @Override
@@ -150,12 +167,16 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
         super.onSaveInstanceState(outState);
         Log.d(TAG, "onSaveInstanceState");
         outState.putInt(LOADER_ID_KEY, mSelectedLoader);
+        int first = ((GridLayoutManager)rvMovies.getLayoutManager())
+                .findFirstVisibleItemPosition();
+        outState.putInt(LAST_SCROLLED_POSITION, first);
+
+        outState.putInt(SELECTED_POSITION, mSelectedPosition);
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart");
         LocalBroadcastManager.getInstance(getContext())
                 .registerReceiver(syncMovies, receiverIntentFilter);
     }
@@ -181,6 +202,7 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         String url = null;
+        mSelectedPosition = 0;
         switch (item.getItemId()){
             case R.id.action_popular:
                 mSelectedLoader = POPULAR_LOADER_ID;
@@ -195,14 +217,17 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
                 break;
         }
 
-        getLoaderManager().restartLoader(mSelectedLoader, null, this);
+        getLoaderManager()
+                .restartLoader(mSelectedLoader, null, this)
+                .forceLoad();
 
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onItemClick(int position) {
-        Movie movie = movieList.get(position);
+        mSelectedPosition = position;
+        Movie movie = mMoviesAdapter.get(position);
 
         if(mMultiPane){
             itemSelectedListener.onMovieSelected(movie.getId());
@@ -214,8 +239,8 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     }
 
     @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        pbWait.setVisibility(View.VISIBLE);
+    public Loader<List<Movie>> onCreateLoader(int id, Bundle args) {
+        showProgress();
 
         Uri uri = null;
         switch (id){
@@ -230,68 +255,35 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
                 break;
         }
 
-        return new CursorLoader(getContext(), uri, null, null, null, null);
+        return new MoviesLoader(getContext(),uri);
     }
 
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if(data == null){
-            return;
+    public void onLoadFinished(Loader<List<Movie>> loader, List<Movie> data) {
+        mMoviesAdapter.swapData(data);
+        if(mMoviesAdapter.getItemCount() > 0 ){
+            int position = (mSelectedPosition != NO_SELECTION)?mSelectedPosition:
+                    mScrollPosition;
+            rvMovies.scrollToPosition(position);
+            itemSelectedListener.onMovieSelected(mMoviesAdapter.get(position).getId());
         }
+        showList();
+        hideProgress();
+    }
 
-        movieList.clear();
-        new AsyncTask<Cursor, Void, Void>(){
-            @Override
-            protected Void doInBackground(Cursor... cursors) {
-                Cursor data = cursors[0];
-                if(data.moveToFirst()){
-                    do {
-                        Movie movie = new Movie();
-                        movie.setId(data.getInt(data.getColumnIndex(PopularMoviesEntry._ID)));
-                        movie.setTitle(data.getString(data.getColumnIndex(PopularMoviesEntry.TITLE)));
-                        movie.setRuntime(data.getInt(data.getColumnIndex(PopularMoviesEntry.RUNTIME)));
-                        movie.setPoster(data.getString(data.getColumnIndex(PopularMoviesEntry.POSTER)));
-                        movie.setOverview(data.getString(data.getColumnIndex(PopularMoviesEntry.SYNOPSIS)));
-                        movie.setAverage(data.getFloat(data.getColumnIndex(PopularMoviesEntry.AVERAGE)));
-                        movie.setYear(getString(R.string.format_date),
-                                data.getString(data.getColumnIndex(PopularMoviesEntry.RELEASE_DATE)));
-                        movieList.add(movie);
-                        Bitmap image = IOUtils.byteArrayToBitmap(
-                                data.getBlob(data.getColumnIndex(PopularMoviesEntry.IMAGE)));
-                        movie.setBitmap(image);
-                    } while (data.moveToNext());
-                }
-
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-                mMoviesAdapter.swapData(movieList);
-                showList();
-                pbWait.setVisibility(View.GONE);
-
-                itemSelectedListener.onMovieSelected(movieList.get(0).getId());
-            }
-        }.execute(data);
-
+    @Override
+    public void onLoaderReset(Loader<List<Movie>> loader) {
+        mMoviesAdapter.swapData(null);
     }
 
     private void showList() {
         rvMovies.setVisibility(View.VISIBLE);
-        tvError.setVisibility(View.GONE);
     }
 
     private void showError() {
         rvMovies.setVisibility(View.GONE);
-        tvError.setVisibility(View.VISIBLE);
     }
 
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-        mMoviesAdapter.swapData(null);
-    }
 
     public static MovieFragment newInstance(Bundle extras) {
         MovieFragment movieFragment = new MovieFragment();
@@ -306,8 +298,24 @@ public class MovieFragment extends BaseFragment implements RecyclerViewItemClick
     public static int calculateNoOfColumns(Context context) {
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
-        int scalingFactor = 342;
+        int scalingFactor = context.getResources().getInteger(R.integer.scale_factor);
         int noOfColumns = (int) (dpWidth / scalingFactor);
         return noOfColumns;
+    }
+
+    @Override
+    public void loadRequestedData() {
+        super.loadRequestedData();
+        Log.d(TAG, "loadRequestedData");
+        if(!PMSyncUtils.isInitialized()){
+            Log.d(TAG, "Not initialized");
+            showProgress();
+            PMSyncUtils.initialize(getContext());
+        } else {
+            Log.d(TAG, "Initialized");
+            getActivity().getSupportLoaderManager()
+                    .restartLoader(mSelectedLoader, null, this)
+                    .forceLoad();
+        }
     }
 }

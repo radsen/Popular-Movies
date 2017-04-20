@@ -94,7 +94,7 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
         if(holder instanceof STrailer) {
             STrailer trailerHolder = (STrailer) holder;
             if(trailerHolder.vpTrailers.getAdapter() != null){
-                Log.d(TAG, "Set trailer adapter");
+                Log.d(TAG, "Swap trailer adapter data");
                 mTrailerAdapter.swapData(mMovie.getTrailers());
             } else {
                 Log.d(TAG, "Set trailer adapter");

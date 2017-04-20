@@ -1,10 +1,13 @@
 package com.kzlabs.popularmovies;
 
 import android.support.v4.app.Fragment;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 
-public class MainActivity extends AppCompatActivity implements MovieFragment.OnItemSelectedListener {
+import com.kzlabs.popularmovies.sync.PMSyncUtils;
+import com.kzlabs.popularmovies.util.BaseActivity;
+
+public class MainActivity extends BaseActivity implements MovieFragment.OnItemSelectedListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -14,7 +17,7 @@ public class MainActivity extends AppCompatActivity implements MovieFragment.OnI
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
         boolean multiPane = getResources().getBoolean(R.bool.twoPaneMode);
 
         if(multiPane && savedInstanceState == null){
@@ -37,8 +40,20 @@ public class MainActivity extends AppCompatActivity implements MovieFragment.OnI
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
     public void onMovieSelected(int movieId) {
-        movieDetailFragment.loadDetail(movieId);
+        if(movieDetailFragment != null){
+            movieDetailFragment.loadDetail(movieId);
+        }
     }
 
     private void attachToView(int layout, Fragment fragment, String tag) {
@@ -46,5 +61,18 @@ public class MainActivity extends AppCompatActivity implements MovieFragment.OnI
                 .beginTransaction()
                 .replace(layout, fragment, tag)
                 .commit();
+    }
+
+    @Override
+    public void onNetworkStatusChange(boolean isConnected) {
+        super.onNetworkStatusChange(isConnected);
+        Log.d(TAG, "onNetworkStatusChange");
+        if(!isConnected() && movieDetailFragment != null){
+            Log.d(TAG, "onNetworkStatusChange not already connected and has detail fragment");
+            movieDetailFragment.loadRequestedData();
+        } else if (!isConnected() && !movieFragment.hasMovies()){
+            Log.d(TAG, "onNetworkStatusChange not already connected and has data");
+            movieFragment.loadRequestedData();
+        }
     }
 }

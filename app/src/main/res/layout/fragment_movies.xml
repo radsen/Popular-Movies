@@ -9,21 +9,4 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <ProgressBar
-        android:id="@+id/pb_wait"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:layout_gravity="center"/>
-
-    <TextView
-        android:id="@+id/tv_error"
-        style="@style/DetailTitle"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:layout_marginLeft="@dimen/activity_horizontal_margin"
-        android:layout_marginRight="@dimen/activity_horizontal_margin"
-        android:text="@string/error_unable_loading"
-        android:visibility="gone" />
-
 </FrameLayout>

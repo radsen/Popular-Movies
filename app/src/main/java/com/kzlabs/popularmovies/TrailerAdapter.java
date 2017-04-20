@@ -3,6 +3,7 @@ package com.kzlabs.popularmovies;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -17,7 +18,7 @@ import java.util.List;
  * Created by radsen on 4/7/17.
  */
 
-class TrailerAdapter extends FragmentPagerAdapter {
+class TrailerAdapter extends FragmentStatePagerAdapter {
 
     private static final String TAG = TrailerAdapter.class.getSimpleName();
 
@@ -35,7 +36,12 @@ class TrailerAdapter extends FragmentPagerAdapter {
 
     @Override
     public Fragment getItem(final int position) {
-        return FragmentPlayer.newInstance(mTrailers.get(position).getKey());
+        return FragmentPlayer.newInstance(mTrailers.get(position).getKey(), position);
+    }
+
+    @Override
+    public int getItemPosition(Object object) {
+        return POSITION_NONE;
     }
 
     public void swapData(List<Trailer> trailers) {

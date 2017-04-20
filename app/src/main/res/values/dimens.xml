@@ -7,4 +7,5 @@
     <dimen name="element_horizontal_margin">8dp</dimen>
 
     <integer name="columns">2</integer>
+    <integer name="scale_factor">135</integer>
 </resources>

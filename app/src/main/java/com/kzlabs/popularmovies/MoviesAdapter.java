@@ -39,8 +39,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
     @Override
     public void onBindViewHolder(MoviesAdapter.ViewHolder holder, final int position) {
         final Movie movie = (Movie) movieList.get(position);
-//        holder.getBinding().setVariable(BR.movie, movie);
-//        holder.getBinding().executePendingBindings();
         if(movie.getBitmap() != null){
             holder.ivPoster.setImageBitmap(movie.getBitmap());
         } else {
@@ -66,6 +64,10 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
     public void swapData(List<Movie> movies) {
         movieList = movies;
         notifyDataSetChanged();
+    }
+
+    public Movie get(int position) {
+        return (Movie) movieList.get(position);
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {

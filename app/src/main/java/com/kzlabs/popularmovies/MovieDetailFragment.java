@@ -16,6 +16,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.ShareActionProvider;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -23,8 +24,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import com.kzlabs.popularmovies.data.PopularMoviesContract;
 import com.kzlabs.popularmovies.data.PopularMoviesContract.PopularMoviesEntry;
@@ -37,8 +36,6 @@ import com.kzlabs.popularmovies.sync.PMService;
 import com.kzlabs.popularmovies.util.IOUtils;
 import com.kzlabs.popularmovies.util.NetworkHelper;
 import java.util.List;
-
-import static android.view.View.VISIBLE;
 
 /**
  * Created by radsen on 11/29/16.
@@ -56,9 +53,7 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
     private RecyclerView rvDetail;
     private IntentFilter receiverIntentFilter;
     private Movie mMovie;
-    private ProgressBar pbWait;
     private ShareActionProvider mShareActionProvider;
-    private TextView tvError;
     private ImageView ivFavButton;
     private DetailQueryHandler detailQueryHandler;
     private int mMovieId;
@@ -85,14 +80,19 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
                 mMovie.setComments(comments);
                 rvDetail.setAdapter(new MovieDetailAdapter(context, getChildFragmentManager(),
                         mMovie, favListener, pageListener));
+                hideProgress();
+            } else if (intent.getAction().equals(ACTION_ERROR)) {
+                hideProgress();
             }
 
-            pbWait.setVisibility(View.GONE);
+
         }
     };
 
     private void getDataByType(int movieId, int movieSection) {
+        showProgress();
         Uri uri = null;
+
         switch (movieSection){
             case MOVIE:
                 uri = NetworkHelper.buildUriForMovie(getContext(), String.valueOf(movieId));
@@ -106,7 +106,6 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
         }
 
         if(NetworkHelper.isNetworkAvailable(getContext()) && uri != null) {
-            pbWait.setVisibility(VISIBLE);
             Intent intentService = new Intent(getContext(), PMService.class);
             intentService.putExtra(MovieConstants.SERVICE_KEY, movieSection);
             intentService.setData(uri);
@@ -139,8 +138,6 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
                              @Nullable Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_movie_detail, container, false);
-        pbWait = (ProgressBar) view.findViewById(R.id.pb_wait);
-        tvError = (TextView) view.findViewById(R.id.tv_error);
         rvDetail = (RecyclerView) view.findViewById(R.id.rv_detail);
 
         return view;
@@ -149,6 +146,7 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        Log.d(TAG, "onActivityCreated");
 
         if(getArguments() != null){
             mMovieId = getArguments().getInt(MOVIE_ID_KEY);
@@ -163,9 +161,12 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
         receiverIntentFilter.addAction(MovieConstants.ACTION_MOVIE);
         receiverIntentFilter.addAction(MovieConstants.ACTION_TRAILERS);
         receiverIntentFilter.addAction(MovieConstants.ACTION_REVIEWS);
+        receiverIntentFilter.addAction(MovieConstants.ACTION_ERROR);
 
         detailQueryHandler = new DetailQueryHandler(getContext().getContentResolver(), this);
-        getDataByType(mMovieId, MOVIE);
+        if(!getResources().getBoolean(R.bool.twoPaneMode)){
+            loadDetail(mMovieId);
+        }
     }
 
     @Override
@@ -303,12 +304,25 @@ public class MovieDetailFragment extends BaseFragment implements MovieConstants,
             } else {
                 rvDetail.setAdapter(new MovieDetailAdapter(getContext(), getChildFragmentManager(),
                         mMovie, this, this));
+                hideProgress();
             }
         }
     }
 
     public void loadDetail(int movieId) {
+        Log.d(TAG, "loadDetail");
         mMovieId = movieId;
-        getDataByType(mMovieId, MOVIE);
+        if(mMovieId > 0){
+            getDataByType(mMovieId, MOVIE);
+        }
+    }
+
+    @Override
+    public void loadRequestedData() {
+        super.loadRequestedData();
+        Log.d(TAG, "loadRequestedData");
+        if(!isConnected()){
+            getDataByType(mMovieId, MOVIE);
+        }
     }
 }

@@ -91,6 +91,7 @@ public class PMTask {
 
                 context.getContentResolver().bulkInsert(PopularMoviesEntry.CONTENT_URI, contentValues);
 
+                result.setAction(MovieConstants.ACTION_MOVIES);
             } catch (JSONException e) {
                 e.printStackTrace();
             }

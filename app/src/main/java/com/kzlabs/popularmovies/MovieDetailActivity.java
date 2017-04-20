@@ -2,16 +2,14 @@ package com.kzlabs.popularmovies;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 
-import com.google.android.youtube.player.YouTubeBaseActivity;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
-import com.kzlabs.popularmovies.model.Movie;
+import com.kzlabs.popularmovies.util.BaseActivity;
 
 /**
  * Created by radsen on 11/29/16.
  */
-public class MovieDetailActivity extends AppCompatActivity {
+public class MovieDetailActivity extends BaseActivity {
 
     private int movieId;
     private MovieDetailFragment movieDetailFragment;
@@ -29,12 +27,20 @@ public class MovieDetailActivity extends AppCompatActivity {
             movieDetailFragment = MovieDetailFragment.newInstance(movieId);
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.fragment_detail, movieDetailFragment, MovieDetailFragment.TAG)
+                    .replace(R.id.fl_movie_detail, movieDetailFragment, MovieDetailFragment.TAG)
                     .commit();
         } else {
             movieDetailFragment = (MovieDetailFragment)
                     getSupportFragmentManager().findFragmentByTag(MovieDetailFragment.TAG);
         }
 
+    }
+
+    @Override
+    public void onNetworkStatusChange(boolean isConnected) {
+        super.onNetworkStatusChange(isConnected);
+        if(isConnected){
+            movieDetailFragment.loadRequestedData();
+        }
     }
 }

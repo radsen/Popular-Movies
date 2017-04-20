@@ -4,11 +4,11 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <android.support.v4.view.ViewPager
+    <com.kzlabs.popularmovies.custom.PopularMoviesViewPager
         android:id="@+id/vp_trailers"
         android:layout_width="match_parent"
-        android:layout_height="200dp">
-    </android.support.v4.view.ViewPager>
+        android:layout_height="wrap_content">
+    </com.kzlabs.popularmovies.custom.PopularMoviesViewPager>
 
     <android.support.design.widget.TabLayout
         android:id="@+id/tabDots"

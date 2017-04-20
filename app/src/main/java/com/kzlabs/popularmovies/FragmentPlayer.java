@@ -22,26 +22,30 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
     private static final String TAG = FragmentPlayer.class.getSimpleName();
     private YouTubePlayerSupportFragment youtubeFragment;
     private YouTubePlayer youtubePlayer;
+    private boolean mIsVisibleToUser;
+    private int mPos;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate - " + this.toString());
+        mPos = getArguments().getInt("test_pos");
+        Log.d(TAG, "onCreate - " + mPos);
         youtubeFragment = YouTubePlayerSupportFragment.newInstance();
         getChildFragmentManager()
                 .beginTransaction()
                 .replace(R.id.youtube_layout, youtubeFragment)
                 .commit();
-        youtubeFragment.initialize(getString(R.string.youtube_api_key), this);
+        if(mIsVisibleToUser){
+            youtubeFragment.initialize(getString(R.string.youtube_api_key), this);
+        }
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        Log.d(TAG, "onCreateView - " + this.toString());
+        Log.d(TAG, "onCreateView - " + mPos);
         View view = inflater.inflate(R.layout.view_trailer, container, false);
-
         return view;
     }
 
@@ -61,11 +65,12 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
         Log.e(TAG, youTubeInitializationResult.toString());
     }
 
-    public static Fragment newInstance(String youtubeId) {
+    public static Fragment newInstance(String youtubeId, int pos) {
         Log.d(TAG, "newInstance Id: " + youtubeId);
         FragmentPlayer fragmentPlayer = new FragmentPlayer();
         Bundle bundle = new Bundle();
         bundle.putString(MovieConstants.YOUTUBE_ID_KEY, youtubeId);
+        bundle.putInt("test_pos", pos);
         fragmentPlayer.setArguments(bundle);
         return fragmentPlayer;
     }
@@ -73,42 +78,36 @@ public class FragmentPlayer extends Fragment implements YouTubePlayer.OnInitiali
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        Log.d(TAG, "setUserVisibleHint - " + this.toString());
-        if(!isVisibleToUser && youtubePlayer != null){
-            Log.d(TAG, "Release player and remove fragment");
-            youtubePlayer.release();
-            getChildFragmentManager().beginTransaction().remove(youtubeFragment)
-                    .commitAllowingStateLoss();
-        } else if(isVisibleToUser && youtubeFragment != null) {
-            Log.d(TAG, "Add fragment and initialize player");
-            getChildFragmentManager().beginTransaction()
-                    .replace(R.id.youtube_layout, youtubeFragment).commitAllowingStateLoss();
+        Log.d(TAG, "setUserVisibleHint - " + getArguments().getInt("test_pos"));
+        mIsVisibleToUser = isVisibleToUser;
+        if(isVisibleToUser && youtubeFragment != null){
             youtubeFragment.initialize(getString(R.string.youtube_api_key), this);
+        } else if (!isVisibleToUser && youtubePlayer != null) {
+            youtubePlayer.release();
         }
-
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart - " + this.toString());
+        Log.d(TAG, "onStart - " + mPos);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume - " + this.toString());
+        Log.d(TAG, "onResume - " + mPos);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause - " + this.toString());
+        Log.d(TAG, "onPause - " + mPos);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        Log.d(TAG, "onStop - " + this.toString());
+        Log.d(TAG, "onStop - " + mPos);
     }
 }

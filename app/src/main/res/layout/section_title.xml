@@ -9,14 +9,13 @@
         android:id="@+id/tv_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:textColor="@android:color/white"
-        android:textStyle="bold"
-        android:background="@color/colorPrimary"
+        android:background="@color/colorPrimaryLight"
         tools:text="@string/section_title_reviews"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
         android:paddingLeft="@dimen/activity_horizontal_margin"
-        android:paddingRight="@dimen/activity_horizontal_margin"/>
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:layout_marginTop="@dimen/element_vertical_margin"
+        style="@style/DetailTitleBold"/>
 
 </LinearLayout>

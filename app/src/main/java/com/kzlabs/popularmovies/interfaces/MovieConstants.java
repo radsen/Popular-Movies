@@ -9,6 +9,8 @@ public interface MovieConstants {
     String BASE_URL = "http://api.themoviedb.org/3/movie/";
 
     String MOVIE_ID_KEY = "com.popular.movies.id";
+    String LAST_SCROLLED_POSITION = "com.popular.movies.scroll.dy";
+    String SELECTED_POSITION = "com.popular.movies.selected.position";
 
     String MOVIE_KEY = "com.popular_movies.movie_key";
     String TRAILER_KEY = "com.popular_movies.trailer_key";
@@ -36,6 +38,8 @@ public interface MovieConstants {
 
     int TIMEOUT = 5000;
     int READ_TIMEOUT = 10000;
+
+    int NO_SELECTION = -1;
 
     String POPULAR = "popular";
     String TOP_RATED = "top_rated";

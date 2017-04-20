@@ -29,4 +29,5 @@
     <string name="favorite_key">favorite</string>
     <string name="preferences_file">pm_prefs.xml</string>
     <string name="unknown_duration">Duration: Unknown</string>
+    <string name="network_not_available_txt">Network not found, please connect to the internet and try again</string>
 </resources>

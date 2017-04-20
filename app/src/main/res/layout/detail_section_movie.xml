@@ -7,12 +7,12 @@
     <android.support.constraint.ConstraintLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/colorPrimaryDark">
+        android:layout_height="wrap_content">
 
         <TextView
             android:id="@+id/tv_title"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginTop="@dimen/element_vertical_margin"
             tools:text="Dr Strange"
@@ -20,15 +20,18 @@
             app:layout_constraintLeft_toLeftOf="parent"
             android:layout_marginLeft="@dimen/activity_horizontal_margin"
             app:layout_constraintRight_toLeftOf="@+id/tv_release_date"
-            android:layout_marginRight="@dimen/element_horizontal_margin" />
+            android:layout_marginRight="@dimen/element_horizontal_margin"
+            android:layout_marginStart="@dimen/activity_horizontal_margin"
+            android:layout_marginEnd="@dimen/element_horizontal_margin" />
 
         <TextView
             android:id="@+id/tv_release_date"
             app:layout_constraintTop_toTopOf="@+id/tv_title"
             tools:text="@string/mock_release_date"
-            style="@style/DetailTitleBold"
             android:layout_marginRight="@dimen/activity_horizontal_margin"
-            app:layout_constraintRight_toRightOf="parent" />
+            app:layout_constraintRight_toRightOf="parent"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin"
+            style="@style/DetailTitleBold"/>
 
         <TextView
             android:id="@+id/tv_runtime"
@@ -36,7 +39,8 @@
             style="@style/DetailText"
             app:layout_constraintLeft_toRightOf="@+id/iv_poster"
             android:layout_marginLeft="@dimen/element_horizontal_margin"
-            app:layout_constraintTop_toTopOf="@+id/iv_poster" />
+            app:layout_constraintTop_toTopOf="@+id/iv_poster"
+            android:layout_marginStart="@dimen/element_horizontal_margin"/>
 
         <ImageView
             android:id="@+id/iv_poster"
@@ -51,7 +55,7 @@
 
         <TextView
             android:id="@+id/tv_overview"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textColor="@android:color/white"
             tools:text="@string/mock_overview"
@@ -62,8 +66,8 @@
             android:layout_marginStart="@dimen/activity_horizontal_margin"
             android:layout_marginEnd="@dimen/activity_horizontal_margin"
             app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginBottom="@dimen/element_vertical_margin" />
+            android:layout_marginBottom="@dimen/element_vertical_margin"
+            style="@style/DetailText"/>
 
         <ImageView
             android:id="@+id/iv_rating"
@@ -83,7 +87,8 @@
             app:layout_constraintBottom_toBottomOf="@+id/iv_rating"
             app:layout_constraintVertical_bias="0.58"
             tools:text="@string/mock_rating"
-            style="@style/DetailText"/>
+            style="@style/DetailText"
+            android:layout_marginStart="@dimen/element_horizontal_margin" />
 
         <ImageView
             android:id="@+id/iv_fav"
@@ -94,7 +99,8 @@
             app:layout_constraintRight_toRightOf="parent"
             tools:src="@drawable/ic_favorite_white"
             app:layout_constraintTop_toTopOf="@+id/iv_poster"
-            app:layout_constraintBottom_toBottomOf="@+id/iv_poster" />
+            app:layout_constraintBottom_toBottomOf="@+id/iv_poster"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin" />
 
     </android.support.constraint.ConstraintLayout>
 
