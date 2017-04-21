@@ -1,11 +1,12 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.activity;
 
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.kzlabs.popularmovies.sync.PMSyncUtils;
-import com.kzlabs.popularmovies.util.BaseActivity;
+import com.kzlabs.popularmovies.fragment.MovieFragment;
+import com.kzlabs.popularmovies.R;
+import com.kzlabs.popularmovies.fragment.MovieDetailFragment;
 
 public class MainActivity extends BaseActivity implements MovieFragment.OnItemSelectedListener {
 

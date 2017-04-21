@@ -1,4 +1,4 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.fragment;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -22,6 +22,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.kzlabs.popularmovies.R;
+import com.kzlabs.popularmovies.activity.MovieDetailActivity;
+import com.kzlabs.popularmovies.adapter.MoviesAdapter;
 import com.kzlabs.popularmovies.data.PopularMoviesContract;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
 import com.kzlabs.popularmovies.interfaces.RecyclerViewItemClickListener;

@@ -1,4 +1,4 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.fragment;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
@@ -25,13 +25,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.kzlabs.popularmovies.R;
+import com.kzlabs.popularmovies.adapter.MovieDetailAdapter;
 import com.kzlabs.popularmovies.data.PopularMoviesContract;
 import com.kzlabs.popularmovies.data.PopularMoviesContract.PopularMoviesEntry;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
 import com.kzlabs.popularmovies.model.Comment;
 import com.kzlabs.popularmovies.model.Movie;
 import com.kzlabs.popularmovies.model.Trailer;
-import com.kzlabs.popularmovies.sync.DetailQueryHandler;
+import com.kzlabs.popularmovies.util.DetailQueryHandler;
 import com.kzlabs.popularmovies.sync.PMService;
 import com.kzlabs.popularmovies.util.IOUtils;
 import com.kzlabs.popularmovies.util.NetworkHelper;

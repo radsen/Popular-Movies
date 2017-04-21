@@ -1,9 +1,6 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.adapter;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.ViewPager;
@@ -14,10 +11,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
+import com.kzlabs.popularmovies.R;
 import com.kzlabs.popularmovies.model.Comment;
 import com.kzlabs.popularmovies.model.Movie;
-import com.kzlabs.popularmovies.util.BindingUtils;
 
 /**
  * Created by radsen on 4/7/17.
@@ -43,7 +39,7 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
     private final Context mContext;
     private ViewPager.OnPageChangeListener mPageListener;
 
-    interface FavListener {
+    public interface FavListener {
         void onClick(View view, long id);
     }
 

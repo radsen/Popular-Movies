@@ -14,7 +14,7 @@ import java.util.List;
  * Created by radsen on 4/7/17.
  */
 
-public class JSONUtils {
+public final class JSONUtils {
 
     public static List<Comment> parseReviews(StringBuilder sb) {
         List<Comment> list = new ArrayList<>();

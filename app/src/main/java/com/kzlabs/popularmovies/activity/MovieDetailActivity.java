@@ -1,10 +1,11 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.activity;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 
+import com.kzlabs.popularmovies.R;
+import com.kzlabs.popularmovies.fragment.MovieDetailFragment;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
-import com.kzlabs.popularmovies.util.BaseActivity;
 
 /**
  * Created by radsen on 11/29/16.

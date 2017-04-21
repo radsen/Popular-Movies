@@ -1,4 +1,4 @@
-package com.kzlabs.popularmovies.util;
+package com.kzlabs.popularmovies.activity;
 
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
@@ -10,6 +10,8 @@ import android.view.View;
 import android.widget.ProgressBar;
 
 import com.kzlabs.popularmovies.R;
+import com.kzlabs.popularmovies.util.ConnectivityReceiver;
+import com.kzlabs.popularmovies.util.NetworkHelper;
 
 /**
  * Created by radsen on 4/15/17.

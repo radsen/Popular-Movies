@@ -1,29 +1,26 @@
 package com.kzlabs.popularmovies.util;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-
+import android.util.Log;
 import com.kzlabs.popularmovies.R;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
-import com.kzlabs.popularmovies.model.Trailer;
-
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 
 /**
  * Created by radsen on 11/30/16.
  */
-public class NetworkHelper {
+public final class NetworkHelper {
+
+    public static final String TAG = NetworkHelper.class.getSimpleName();
 
     public static boolean isNetworkAvailable(Context ctx) {
         ConnectivityManager connectivityManager
@@ -92,15 +89,15 @@ public class NetworkHelper {
             }
 
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
         } finally {
             if(reader != null){
                 try{
                     reader.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, e.getMessage());
                 }
             }
         }
@@ -121,9 +118,9 @@ public class NetworkHelper {
                     BitmapFactory.decodeStream(connection.getInputStream()));
 
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
         }
 
         return image;
@@ -150,7 +147,7 @@ public class NetworkHelper {
         try {
             url = new URL(uri.toString());
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
         }
         return url;
     }

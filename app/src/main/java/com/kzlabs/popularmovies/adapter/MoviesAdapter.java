@@ -1,15 +1,15 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.adapter;
 
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
-import android.support.v4.content.Loader;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.kzlabs.popularmovies.BR;
+import com.kzlabs.popularmovies.fragment.MovieFragment;
+import com.kzlabs.popularmovies.R;
 import com.kzlabs.popularmovies.model.Movie;
 import com.kzlabs.popularmovies.util.BindingUtils;
 

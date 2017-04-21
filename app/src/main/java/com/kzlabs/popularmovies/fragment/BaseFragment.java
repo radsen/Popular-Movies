@@ -1,4 +1,4 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.fragment;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -9,7 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.kzlabs.popularmovies.interfaces.OnDataRequested;
-import com.kzlabs.popularmovies.util.BaseActivity;
+import com.kzlabs.popularmovies.activity.BaseActivity;
 
 /**
  * Created by radsen on 11/28/16.

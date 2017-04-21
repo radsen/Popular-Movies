@@ -1,15 +1,10 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.adapter;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentStatePagerAdapter;
-import android.util.Log;
-import android.widget.Toast;
 
-import com.google.android.youtube.player.YouTubeInitializationResult;
-import com.google.android.youtube.player.YouTubePlayer;
-import com.google.android.youtube.player.YouTubePlayerSupportFragment;
+import com.kzlabs.popularmovies.fragment.FragmentPlayer;
 import com.kzlabs.popularmovies.model.Trailer;
 
 import java.util.List;

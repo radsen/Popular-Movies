@@ -1,4 +1,4 @@
-package com.kzlabs.popularmovies.sync;
+package com.kzlabs.popularmovies.util;
 
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;

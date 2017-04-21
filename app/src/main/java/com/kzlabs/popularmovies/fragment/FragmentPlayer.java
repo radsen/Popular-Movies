@@ -1,4 +1,4 @@
-package com.kzlabs.popularmovies;
+package com.kzlabs.popularmovies.fragment;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
 import com.google.android.youtube.player.YouTubePlayerSupportFragment;
+import com.kzlabs.popularmovies.R;
 import com.kzlabs.popularmovies.interfaces.MovieConstants;
 
 /**
